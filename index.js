@@ -13,14 +13,14 @@ io.on('connection', function(socket){
   socket.on('disconnect', function(){
     console.log('user was disconnected');
     if (socket.player) {
-      io.emit('play', destroyCommand(socket.player));
+      sendAll('play', destroyCommand(socket.player));
       delete players[socket.player];
     }
     socket.player = undefined;
   });
 
   socket.on('play', function(cmd) {
-    io.emit('play', cmd);
+    sendAll('play', cmd);
   });
 
   socket.on('register', function(name) {
@@ -56,4 +56,16 @@ function createCommand(player) {
     type: 'CREATE',
     player: player,
   };
+}
+
+function sendAll(token, msg, except) {
+  let socket;
+
+  for(key in players) {
+    socket = players[key];
+
+    if (socket != except) {
+      socket.emit(token, msg);
+    }
+  }
 }

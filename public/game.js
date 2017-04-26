@@ -132,6 +132,7 @@ function destroyPlayer(name) {
     character.playerName.destroy();
     character.player.destroy();
   }
+
   delete players[name];
 }
 
@@ -181,9 +182,6 @@ function physics() {
     }
 
     character = players[cmd.player];
-
-    if(!character) return;
-
     player = character.player;
     playerName = character.playerName;
 
@@ -253,14 +251,12 @@ function applyCollision() {
 
   for(k1 in players) {
     character = players[k1];
-    if(!character) return;
     player = character.player;
     character.hitPlatform = game.physics.arcade.collide(player, platforms);
 
     for(k2 in players) {
       if (k1 == k2) continue;
       character2 = players[k2];
-      if(!character2) return;
       game.physics.arcade.collide(player, character2.player);
     }
   }
