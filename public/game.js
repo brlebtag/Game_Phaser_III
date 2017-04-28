@@ -20,7 +20,7 @@ $(function() {
   });
 
   socket.on('register ok', function(cmd) {
-    sendCmd(createCommand(name));
+    sendCmd(createCommand(name, 32, game.world.height - 150));
   });
 
   socket.on('play', function(cmd) {
@@ -90,7 +90,7 @@ function textMiddleWorld(text) {
   return (32.0 - (text.length * 6.5)) / 2.0;
 }
 
-function createPlayer(name) {
+function createPlayer(name, x, y) {
   console.log('player', name, 'was created!');
   players[name] = {};
 
@@ -108,7 +108,7 @@ function createPlayer(name) {
   character.playerName = playerName;
   
   // The player and its settings
-  var player = game.add.sprite(32, game.world.height - 150, 'dude');
+  var player = game.add.sprite(x, y, 'dude');
 
   //  We need to enable physics on the player
   game.physics.arcade.enable(player);
@@ -132,6 +132,7 @@ function destroyPlayer(name) {
     character.playerName.destroy();
     character.player.destroy();
   }
+
   delete players[name];
 }
 
@@ -143,22 +144,24 @@ function update() {
 function keyboard() {
   if (!players[name]) return;
 
+  var player = players[name].player;
+
   if (cursors.left.isDown) {
     if (cursors.up.isDown) {
-      sendCmd(jumpLeftCommand(name));
+      sendCmd(jumpLeftCommand(name, player.x, player.y));
     } else {
-      sendCmd(moveLeftCommand(name));
+      sendCmd(moveLeftCommand(name, player.x, player.y));
     }
   } else if (cursors.right.isDown) {
     if (cursors.up.isDown) {
-      sendCmd(jumpRightCommand(name));
+      sendCmd(jumpRightCommand(name, player.x, player.y));
     } else {
-      sendCmd(moveRightCommand(name));
+      sendCmd(moveRightCommand(name, player.x, player.y));
     }
   } else if (cursors.up.isDown) {
-    sendCmd(jumpCommand(name));
+    sendCmd(jumpCommand(name, player.x, player.y));
   } else {
-    sendCmd(stopCommand(name));
+    sendCmd(stopCommand(name, player.x, player.y));
   }
 }
 
@@ -173,7 +176,7 @@ function physics() {
     cmd = commands[i];
 
     if (cmd.type == 'CREATE') {
-      createPlayer(cmd.player);
+      createPlayer(cmd.player, cmd.x, cmd.y);
       continue;
     } else if (cmd.type == 'DESTROY') {
       destroyPlayer(cmd.player);
@@ -181,9 +184,6 @@ function physics() {
     }
 
     character = players[cmd.player];
-
-    if(!character) return;
-
     player = character.player;
     playerName = character.playerName;
 
@@ -249,69 +249,83 @@ function jumpPlayer(player, character) {
 }
 
 function applyCollision() {
-  var k1, k2, character, player, character2;
+  var k1, k2, character, player, character2, hitPlatform;
 
   for(k1 in players) {
     character = players[k1];
-    if(!character) return;
     player = character.player;
-    character.hitPlatform = game.physics.arcade.collide(player, platforms);
+    hitPlatform = game.physics.arcade.collide(player, platforms);
 
     for(k2 in players) {
       if (k1 == k2) continue;
       character2 = players[k2];
-      if(!character2) return;
-      game.physics.arcade.collide(player, character2.player);
+      hitPlatform |= game.physics.arcade.collide(player, character2.player);
     }
+
+    character.hitPlatform = hitPlatform
   }
 }
 
-function stopCommand(player) {
+function stopCommand(player, x, y) {
   return {
     type: 'STOP',
     player: player,
+    x: x,
+    y: y,
   };
 }
 
-function moveLeftCommand(player) {
+function moveLeftCommand(player, x, y) {
   return {
     type: 'MOV_LEFT',
     player: player,
+    x: x,
+    y: y,
   };
 }
 
-function moveRightCommand(player) {
+function moveRightCommand(player, x, y) {
   return {
     type: 'MOV_RIGHT',
     player: player,
+    x: x,
+    y: y,
   };
 }
 
-function jumpCommand(player) {
+function jumpCommand(player, x, y) {
   return {
     type: 'JUMP',
     player: player,
+    x: x,
+    y: y,
   };
 }
 
-function jumpRightCommand(player) {
+function jumpRightCommand(player, x, y) {
   return {
     type: 'JUMP_RIGHT',
     player: player,
+    x: x,
+    y: y,
   };
 }
 
-function jumpLeftCommand(player) {
+function jumpLeftCommand(player, x, y) {
   return {
     type: 'JUMP_LEFT',
     player: player,
+    x: x,
+    y: y,
   };
 }
 
-function createCommand(player) {
+function createCommand(player, x, y) {
   return {
     type: 'CREATE',
     player: player,
+    x: x,
+    y: y,
   };
 }
 

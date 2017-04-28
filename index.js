@@ -13,17 +13,22 @@ io.on('connection', function(socket){
   socket.on('disconnect', function(){
     console.log('user was disconnected');
     if (socket.player) {
-      io.emit('play', destroyCommand(socket.player));
+      sendAll('play', destroyCommand(socket.player));
       delete players[socket.player];
     }
     socket.player = undefined;
   });
 
   socket.on('play', function(cmd) {
-    io.emit('play', cmd);
+    var socket = players[cmd.player];
+    socket.x = cmd.x;
+    socket.y = cmd.y;
+    sendAll('play', cmd);
   });
 
   socket.on('register', function(name) {
+    var player;
+
     if (name in players) {
       socket.emit('register error');
     } else {
@@ -32,8 +37,9 @@ io.on('connection', function(socket){
       players[name] = socket;
       socket.emit('register ok');
       for(key in players) {
+        player = players[key];
         if (key != name) {
-          socket.emit('play', createCommand(players[key].player));
+          socket.emit('play', createCommand(player.player, player.x, player.y));
         }
       }
     }
@@ -51,9 +57,23 @@ function destroyCommand(player) {
   };
 }
 
-function createCommand(player) {
+function createCommand(player, x, y) {
   return {
     type: 'CREATE',
     player: player,
+    x: x,
+    y: y,
   };
+}
+
+function sendAll(token, msg, except) {
+  let socket;
+
+  for(key in players) {
+    socket = players[key];
+
+    if (socket != except) {
+      socket.emit(token, msg);
+    }
+  }
 }
